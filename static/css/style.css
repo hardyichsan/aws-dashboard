@@ -1,0 +1,87 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f7f9;
+    color: #333;
+}
+
+header {
+    text-align: center;
+    padding: 10px;
+    background-color: #2b7a78;
+    color: white;
+}
+
+main {
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+/* Cards Grid */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.card {
+    background-color: white;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card .label {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+}
+
+.card span {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #2b7a78;
+}
+
+.card .unit {
+    display: block;
+    font-size: 0.75em;
+    color: #999;
+}
+
+/* Control Dropdown */
+.controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+/* Grafik dan Windrose */
+.graph-section {
+    display: flex;
+    gap: 10px;
+}
+
+.chart-box {
+    flex: 2;
+}
+
+.windrose-box {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Map Box */
+.map-box {
+    margin-top: 10px;
+    height: 200px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}

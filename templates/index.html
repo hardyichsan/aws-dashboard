@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AWS Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <header>
+    <h1>AWS Dashboard</h1>
+  </header>
+
+  <main>
+    <!-- Cards Section -->
+    <div class="cards-grid">
+      <div class="card" id="temp-card"><span class="label">Temperature</span><span id="temp-value">-</span><span class="unit">°C</span></div>
+      <div class="card" id="hum-card"><span class="label">Humidity</span><span id="hum-value">-</span><span class="unit">%</span></div>
+      <div class="card" id="press-card"><span class="label">Pressure</span><span id="press-value">-</span><span class="unit">hPa</span></div>
+      <div class="card" id="wspeed-card"><span class="label">Wind Speed</span><span id="wspeed-value">-</span><span class="unit">m/s</span></div>
+      <div class="card" id="wdir-card"><span class="label">Wind Dir</span><span id="wdir-value">-</span><span class="unit">°</span></div>
+      <div class="card" id="rain-card"><span class="label">Rainfall</span><span id="rain-value">-</span><span class="unit">mm</span></div>
+      <div class="card" id="srad-card"><span class="label">Solar Radiation</span><span id="srad-value">-</span><span class="unit">W/m²</span></div>
+    </div>
+
+    <!-- Control Dropdowns -->
+    <div class="controls">
+      <label for="param-select">Pilih Parameter:</label>
+      <select id="param-select"></select>
+
+      <label for="time-range">Rentang Waktu:</label>
+      <select id="time-range">
+        <option value="realtime">Realtime</option>
+        <option value="1h">1 Jam</option>
+        <option value="12h">12 Jam</option>
+        <option value="1d">1 Hari</option>
+        <option value="3d">3 Hari</option>
+        <option value="7d">7 Hari</option>
+      </select>
+    </div>
+
+    <!-- Grafik + Windrose -->
+    <div class="graph-section">
+      <div class="chart-box">
+        <canvas id="dataChart"></canvas>
+      </div>
+      <div class="windrose-box" id="windRoseChart"></div>
+    </div>
+
+    <!-- Map -->
+    <div id="map" class="map-box"></div>
+  </main>
+
+  <!-- LOAD JAVASCRIPT TERAKHIR -->
+  <script src="/static/js/script.js"></script>
+</body>
+</html>
