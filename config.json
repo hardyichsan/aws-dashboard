@@ -1,5 +1,6 @@
 {
-  "device": "datalogger01",
+  "device": "HSC-2505X001",
+  "software": "1.0.0",
   "location": "PT Smart Industri",
   "geo": {
     "latitude": -6.5221467,
