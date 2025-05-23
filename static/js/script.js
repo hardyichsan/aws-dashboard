@@ -86,111 +86,89 @@ async function fetchHistory(param, range) {
     }
 }
 
-async function renderWindRose(range) {
+async function renderWindRose(range = "realtime") {
     try {
         const res = await fetch(`/api/windrose?range=${range}`);
         const data = await res.json();
 
-        const directions = ['N','NE','E','SE','S','SW','W','NW'];
-        const bins = {};
-        directions.forEach(d => bins[d] = []);
-
+        // Buat array dari arah dan kecepatan
+        const rawData = [];
         for (let i = 0; i < data.wdir.length; i++) {
             const dir = data.wdir[i];
             const spd = data.wspeed[i];
             if (dir !== null && spd !== null) {
-                // Bagi arah: N = 337.5–360 & 0–22.5
-                const compassIndex = Math.floor(((dir + 22.5) % 360) / 45);
-                const correctedIndex = (compassIndex + 1) % 8; // geser agar N = 337.5–22.5
-                bins[directions[correctedIndex]].push(spd);
+                rawData.push({
+                    dir: degToCompass16(dir),
+                    speed: spd
+                });
             }
         }
 
-        const categories = [1, 3, 5];
-        const stacked = directions.map(dir => {
-            const counts = [0, 0, 0, 0];
-            bins[dir].forEach(s => {
-                if (s <= categories[0]) counts[0]++;
-                else if (s <= categories[1]) counts[1]++;
-                else if (s <= categories[2]) counts[2]++;
-                else counts[3]++;
-            });
-            return { direction: dir, counts };
+        // Kelompokkan data berdasarkan arah
+        const grouped = {};
+        rawData.forEach(d => {
+            if (!grouped[d.dir]) grouped[d.dir] = [];
+            grouped[d.dir].push(d.speed);
         });
 
-        // Hapus isi lama
-        d3.select("#windRoseChart").selectAll("*").remove();
-
-        const w = 300, h = 300, rMin = 30, rMax = Math.min(w, h) / 2 - 20;
-        const svg = d3.select("#windRoseChart")
-            .append("svg")
-            .attr("width", w)
-            .attr("height", h + 50) // tambahan ruang untuk legenda
-            .append("g")
-            .attr("transform", `translate(${w / 2},${h / 2})`);
-
-        const angle = d3.scaleBand().domain(directions).range([0, 2 * Math.PI]).align(0);
-        const radius = d3.scaleLinear().domain([0, d3.max(stacked, d => d3.sum(d.counts))]).range([rMin, rMax]);
-        const color = d3.scaleOrdinal().domain([0, 1, 2, 3]).range(["#91bfdb", "#fee090", "#fc8d59", "#d73027"]);
-        const stack = d3.stack().keys([0, 1, 2, 3]).value((d, k) => d.counts[k]);
-        const series = stack(stacked);
-
-        svg.append("g").selectAll("g")
-            .data(series).join("g")
-            .attr("fill", d => color(d.key))
-            .selectAll("path")
-            .data(d => d).join("path")
-            .attr("d", d3.arc()
-                .innerRadius(d => radius(d[0]))
-                .outerRadius(d => radius(d[1]))
-                .startAngle(d => angle(d.data.direction))
-                .endAngle(d => angle(d.data.direction) + angle.bandwidth())
-                .padAngle(0.01));
-
-        // Tambah label arah
-        svg.append("g").selectAll("text")
-            .data(directions).join("text")
-            .attr("text-anchor", "middle")
-            .attr("transform", d => {
-                const a = angle(d) + angle.bandwidth() / 2;
-                return `rotate(${(a * 180 / Math.PI - 90)}) translate(${rMax + 10},0) rotate(${a < Math.PI ? 90 : -90})`;
-            })
-            .text(d => d);
-
-        // Legenda kecepatan
-        const legend = d3.select("#windRoseChart svg")
-            .append("g")
-            .attr("transform", `translate(10, ${h + 10})`);
-
-        const legendItems = [
-            { label: "≤ 1 m/s", color: "#91bfdb" },
-            { label: "1–3 m/s", color: "#fee090" },
-            { label: "3–5 m/s", color: "#fc8d59" },
-            { label: "> 5 m/s", color: "#d73027" }
+        const directions = [
+            'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+            'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
         ];
 
-        legend.selectAll("g")
-            .data(legendItems).enter().append("g")
-            .attr("transform", (d, i) => `translate(${i * 75},0)`)
-            .each(function(d) {
-                const g = d3.select(this);
-                g.append("rect")
-                    .attr("width", 12)
-                    .attr("height", 12)
-                    .attr("fill", d.color);
-                g.append("text")
-                    .attr("x", 16)
-                    .attr("y", 10)
-                    .text(d.label)
-                    .attr("font-size", "10px")
-                    .attr("fill", "#333");
-            });
+        const meanSpeeds = directions.map(dir => {
+            const speeds = grouped[dir] || [];
+            const mean = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
+            return +mean.toFixed(2);
+        });
+
+        const trace = {
+            type: 'barpolar',
+            r: meanSpeeds,
+            theta: directions,
+            name: 'Wind Speed',
+            marker: {
+                color: meanSpeeds,
+                colorscale: 'Bluered',
+                colorbar: {
+                    title: 'm/s',
+                    thickness: 10
+                }
+            }
+        };
+
+        const layout = {
+            title: 'Wind Rose (Average Speed)',
+            polar: {
+                angularaxis: {
+                    direction: 'clockwise',
+                    rotation: 90
+                },
+                radialaxis: {
+                    ticksuffix: ' m/s',
+                    angle: 45
+                }
+            },
+            margin: { t: 50, b: 30, l: 30, r: 30 },
+            showlegend: false
+        };
+
+        Plotly.newPlot("windRoseChart", [trace], layout);
 
     } catch (e) {
-        console.error("Gagal render windrose:", e);
+        console.error("❌ Gagal render wind rose:", e);
     }
 }
 
+
+function degToCompass16(deg) {
+    const directions = [
+        'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+        'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
+    ];
+    const index = Math.round(deg / 22.5) % 16;
+    return directions[index];
+}
 
 // Grafik utama
 const ctx = document.getElementById("dataChart").getContext("2d");
