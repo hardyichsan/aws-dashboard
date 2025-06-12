@@ -1,9 +1,10 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_file
 import psycopg2
 import pandas as pd
 from datetime import datetime, timedelta
 import json
 import os
+import io
 
 app = Flask(__name__)
 

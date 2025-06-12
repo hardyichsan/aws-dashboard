@@ -38,7 +38,8 @@ async function loadConfig() {
     fetchData();
     const param = paramSelect.value;
     const range = document.getElementById('time-range').value;
-    fetchHistory(param, range);
+    //fetchHistory(param, range);
+    renderHistoryChart(param, range);
     renderWindRose(range);
 
     // Tampilkan footer device dan software version
@@ -73,18 +74,18 @@ async function fetchData() {
     }
 }
 
-async function fetchHistory(param, range) {
-    try {
-        const res = await fetch(`/api/history?param=${param}&range=${range}`);
-        const data = await res.json();
-        chart.data.labels = data.timestamps;
-        chart.data.datasets[0].data = data.values;
-        chart.data.datasets[0].label = param.toUpperCase();
-        chart.update();
-    } catch (e) {
-        console.error("Gagal fetch history:", e);
-    }
-}
+// async function fetchHistory(param, range) {
+//     try {
+//         const res = await fetch(`/api/history?param=${param}&range=${range}`);
+//         const data = await res.json();
+//         chart.data.labels = data.timestamps;
+//         chart.data.datasets[0].data = data.values;
+//         chart.data.datasets[0].label = param.toUpperCase();
+//         chart.update();
+//     } catch (e) {
+//         console.error("Gagal fetch history:", e);
+//     }
+// }
 
 async function renderWindRose(range = "realtime") {
     try {
@@ -170,40 +171,89 @@ function degToCompass16(deg) {
     return directions[index];
 }
 
-// Grafik utama
-const ctx = document.getElementById("dataChart").getContext("2d");
-const chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [{
-            label: 'Data',
-            data: [],
-            borderColor: 'blue',
-            backgroundColor: 'rgba(0,0,255,0.1)',
-            fill: true,
-            tension: 0.3
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            x: {
-                title: { display: true, text: "Waktu" },
-                ticks: {
-                    callback: function(val) {
-                        const label = this.getLabelForValue(val);
-                        const date = new Date(label);
-                        return `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
-                    }
-                }
+// // Grafik utama
+// const ctx = document.getElementById("dataChart").getContext("2d");
+// const chart = new Chart(ctx, {
+//     type: 'line',
+//     data: {
+//         labels: [],
+//         datasets: [{
+//             label: 'Data',
+//             data: [],
+//             borderColor: 'blue',
+//             backgroundColor: 'rgba(0,0,255,0.1)',
+//             fill: true,
+//             tension: 0.3
+//         }]
+//     },
+//     options: {
+//         responsive: true,
+//         scales: {
+//             x: {
+//                 title: { display: true, text: "Waktu" },
+//                 ticks: {
+//                     callback: function(val) {
+//                         const label = this.getLabelForValue(val);
+//                         const date = new Date(label);
+//                         return `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+//                     }
+//                 }
+//             },
+//             y: {
+//                 title: { display: true, text: "Nilai" }
+//             }
+//         }
+//     }
+// });
+
+async function renderHistoryChart(param = "temp", range = "realtime") {
+    try {
+        console.log("🟢 renderHistoryChart() dipanggil:", param, range);
+        const res = await fetch(`/api/history?param=${param}&range=${range}`);
+        const data = await res.json();
+
+        console.log("📈 Data timestamps:", data.timestamps);
+        console.log("📉 Data values:", data.values)
+
+        const trace = {
+            x: data.timestamps,
+            y: data.values,
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: param.toUpperCase(),
+            line: {
+                shape: 'spline',
+                color: '#0074D9',
+                width: 2
             },
-            y: {
-                title: { display: true, text: "Nilai" }
+            marker: {
+                size: 4
             }
-        }
+        };
+
+        const layout = {
+            margin: { t: 30, b: 70, l: 50, r: 20 }, // <- tambah bottom margin
+            title: `History of ${param.toUpperCase()}`,
+            xaxis: {
+                title: 'Waktu',
+                tickangle: -45,
+                tickformat: "%Y-%m-%d<br>%H:%M",  // <- pisahkan baris
+            },
+            yaxis: {
+                title: 'Nilai'
+            },
+            plot_bgcolor: '#fafafa',
+            paper_bgcolor: '#fff',
+            font: {
+                size: 12
+            }
+        };
+        ;
+        Plotly.newPlot("dataChart", [trace], layout);
+    } catch (err) {
+        console.error("❌ Gagal render grafik:", err);
     }
-});
+}
 
 document.getElementById('export-btn').addEventListener('click', async () => {
     const start = document.getElementById('start-datetime').value;
@@ -259,13 +309,13 @@ document.getElementById('export-btn').addEventListener('click', async () => {
 document.getElementById('param-select').addEventListener('change', () => {
     const param = document.getElementById('param-select').value;
     const range = document.getElementById('time-range').value;
-    fetchHistory(param, range);
+    renderHistoryChart(param, range);
 });
 
 document.getElementById('time-range').addEventListener('change', () => {
     const param = document.getElementById('param-select').value;
     const range = document.getElementById('time-range').value;
-    fetchHistory(param, range);
+    renderHistoryChart(param, range);
     renderWindRose(range);
 });
 
@@ -294,7 +344,8 @@ setInterval(() => {
     fetchData();
     const param = document.getElementById('param-select').value;
     const range = document.getElementById('time-range').value;
-    fetchHistory(param, range);
+    //fetchHistory(param, range);
+    renderHistoryChart(param, range);
     renderWindRose(range);
 }, 60000);
 
