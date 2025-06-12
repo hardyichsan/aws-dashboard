@@ -1,9 +1,10 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_file
 import psycopg2
 import pandas as pd
 from datetime import datetime, timedelta
 import json
 import os
+import io
 
 app = Flask(__name__)
 
@@ -35,7 +36,7 @@ def latest_data():
             print("⚠️ Parameter kosong")
             return jsonify({"error": "No parameters defined in config"}), 400
 
-        param_fields = ', '.join(params)
+        param_fields = ', '.join(params + ["timestamp"])
         print("🔍 SQL kolom:", param_fields)
 
         query = f"""
@@ -55,6 +56,9 @@ def latest_data():
             return jsonify({param: None for param in params})
         else:
             row = df.iloc[0].to_dict()
+            if 'timestamp' in row and row['timestamp']:
+                ts = row['timestamp']
+                row['timestamp'] = ts.strftime("%Y-%m-%d %H:%M")
             print("✅ Data ditemukan:", row)
             return jsonify(row)
 
@@ -128,6 +132,71 @@ def windrose_data():
     except Exception as e:
         print("❌ /api/windrose error:", e)
         return jsonify({"timestamps": [], "wspeed": [], "wdir": [], "error": str(e)}), 500
+
+@app.route('/api/export', methods=['POST'])
+def export_data():
+    try:
+        data = request.get_json()
+        start = data.get("start")
+        end = data.get("end")
+        destination = data.get("destination", "download")
+
+        print(f"📦 Export request: {start} → {end} to {destination}")
+
+        # Validasi format waktu
+        start_dt = datetime.fromisoformat(start)
+        end_dt = datetime.fromisoformat(end)
+
+        # Query data dari database
+        query = "SELECT * FROM sensor_datas WHERE timestamp BETWEEN %s AND %s ORDER BY timestamp ASC;"
+        conn = psycopg2.connect(**DB_CONFIG)
+        df = pd.read_sql(query, conn, params=(start_dt, end_dt))
+        conn.close()
+
+        if df.empty:
+            return jsonify({"error": "Tidak ada data dalam rentang waktu tersebut."}), 400
+
+        filename = f"export_{start_dt.strftime('%Y%m%d%H%M')}_{end_dt.strftime('%Y%m%d%H%M')}.csv"
+
+        if destination == "download":
+            # Kirim ke browser
+            csv_io = io.StringIO()
+            df.to_csv(csv_io, index=False)
+            mem = io.BytesIO()
+            mem.write(csv_io.getvalue().encode('utf-8'))
+            mem.seek(0)
+            return send_file(mem, download_name=filename, as_attachment=True, mimetype='text/csv')
+
+        else:
+            # Simpan ke USB dengan mount otomatis
+            usb_root = "/mnt/usb"
+            usb_path = os.path.join(usb_root, destination)
+
+            if not os.path.isdir(usb_path) or not os.access(usb_path, os.W_OK):
+                return jsonify({"error": f"Folder USB '{destination}' tidak ditemukan atau tidak bisa ditulis."}), 500
+
+            export_path = os.path.join(usb_path, filename)
+            df.to_csv(export_path, index=False)
+
+            print(f"✅ Data berhasil diekspor ke: {export_path}")
+            return jsonify({"status": "success", "path": export_path})
+
+    except Exception as e:
+        print("❌ Export error:", e)
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/usb-list')
+def list_usb_devices():
+    usb_root = "/mnt/usb"
+    try:
+        devices = ["download"]  # pilihan default
+        for d in os.listdir(usb_root):
+            path = os.path.join(usb_root, d)
+            if os.path.isdir(path) and os.access(path, os.W_OK):
+                devices.append(d)
+        return jsonify(devices)
+    except Exception as e:
+        return jsonify(["download"])
 
 if __name__ == "__main__":
     import sys

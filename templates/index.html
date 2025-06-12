@@ -4,30 +4,45 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AWS Dashboard</title>
+
+  <!-- Style -->
   <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <!-- Script libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
+
 <body>
   <header>
-    <h1>AWS Dashboard</h1>
+    <div class="header-left">
+      <img src="/static/logo.png" alt="Logo" class="logo" />
+    </div>
+    <div class="header-center">
+      <h1>Automatic Weather Station</h1>
+    </div>
+    <div class="header-right">
+      <span id="map-location">Location: -</span>
+    </div>
   </header>
 
   <main>
-    <!-- Cards Section -->
-    <div class="cards-grid">
-      <div class="card" id="temp-card"><span class="label">Temperature</span><span id="temp-value">-</span><span class="unit">°C</span></div>
-      <div class="card" id="hum-card"><span class="label">Humidity</span><span id="hum-value">-</span><span class="unit">%</span></div>
-      <div class="card" id="press-card"><span class="label">Pressure</span><span id="press-value">-</span><span class="unit">hPa</span></div>
-      <div class="card" id="wspeed-card"><span class="label">Wind Speed</span><span id="wspeed-value">-</span><span class="unit">m/s</span></div>
-      <div class="card" id="wdir-card"><span class="label">Wind Dir</span><span id="wdir-value">-</span><span class="unit">°</span></div>
-      <div class="card" id="rain-card"><span class="label">Rainfall</span><span id="rain-value">-</span><span class="unit">mm</span></div>
-      <div class="card" id="srad-card"><span class="label">Solar Radiation</span><span id="srad-value">-</span><span class="unit">W/m²</span></div>
+    <div class="card-windrose-wrapper">
+      <div class="cards-grid">
+        <div class="card" id="temp-card"><span class="label">Temperature</span><span id="temp-value">-</span><span class="unit">°C</span><span id="temp-time" class="timestamp">-</span></div>
+        <div class="card" id="hum-card"><span class="label">Humidity</span><span id="hum-value">-</span><span class="unit">%</span><span id="hum-time" class="timestamp">-</span></div>
+        <div class="card" id="press-card"><span class="label">Pressure</span><span id="press-value">-</span><span class="unit">hPa</span><span id="press-time" class="timestamp">-</span></div>
+        <div class="card" id="wspeed-card"><span class="label">Wind Speed</span><span id="wspeed-value">-</span><span class="unit">m/s</span><span id="wspeed-time" class="timestamp">-</span></div>
+        <div class="card" id="wdir-card"><span class="label">Wind Dir</span><span id="wdir-value">-</span><span class="unit">°</span><span id="wdir-time" class="timestamp">-</span></div>
+        <div class="card" id="rain-card"><span class="label">Rainfall</span><span id="rain-value">-</span><span class="unit">mm</span><span id="rain-time" class="timestamp">-</span></div>
+        <div class="card" id="srad-card"><span class="label">Solar Radiation</span><span id="srad-value">-</span><span class="unit">W/m²</span><span id="srad-time" class="timestamp">-</span></div>
+      </div>
+      <div class="windrose-box" id="windRoseChart"></div>
     </div>
 
-    <!-- Control Dropdowns -->
     <div class="controls">
       <label for="param-select">Pilih Parameter:</label>
       <select id="param-select"></select>
@@ -43,19 +58,40 @@
       </select>
     </div>
 
-    <!-- Grafik + Windrose -->
-    <div class="graph-section">
-      <div class="chart-box">
-        <canvas id="dataChart"></canvas>
+    <div class="chart-map-wrapper">
+      <div class="chart-container">
+        <div id="dataChart" style="width: 100%; height: 350px;"></div>
       </div>
-      <div class="windrose-box" id="windRoseChart"></div>
+      <div class="map-container">
+        <div id="map"></div>
+      </div>
     </div>
+    
+    <div class="export-form">
+      <label for="start-datetime">Start:</label>
+      <input type="datetime-local" id="start-datetime" />
 
-    <!-- Map -->
-    <div id="map" class="map-box"></div>
+      <label for="end-datetime">End:</label>
+      <input type="datetime-local" id="end-datetime" />
+
+      <label for="export-destination">Export to:</label>
+      <select id="export-destination">
+        <option value="download">Download</option>
+        <!-- USB drives will be added dynamically -->
+      </select>
+
+      <button id="export-btn">Export</button>
+      <div id="export-status" class="status-msg"></div>
+    </div>
   </main>
 
-  <!-- LOAD JAVASCRIPT TERAKHIR -->
   <script src="/static/js/script.js"></script>
 </body>
+
+<footer class="dashboard-footer">
+  <div class="footer-section left" id="footer-device">Device: -</div>
+  <div class="footer-section center" id="footer-copy">Copyright © 2025 Has Environmental</div>
+  <div class="footer-section right" id="footer-version">Version: -</div>
+</footer>
+
 </html>

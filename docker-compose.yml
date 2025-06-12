@@ -29,6 +29,10 @@ services:
       DB_PASSWORD: has123456
     ports:
       - "5010:5010"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /media/pi:/mnt/usb:rw 
 
 volumes:
   pgdata:
